@@ -1,19 +1,27 @@
 # comlink-openfin
 
-ComLink (https://github.com/GoogleChromeLabs/comlink) provides an easy way to expose an API from a web worker / iframe by wrapping up postMessage and providing a proxy.
+ComLink (https://github.com/GoogleChromeLabs/comlink) is a great way to interact with web workers or iFrames whose only interaction is through [postMessage](https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage). Using ComLink, a [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) object is created on one side of the [MessageChannel](https://developer.mozilla.org/en-US/docs/Web/API/MessageChannel) allowing you to interact with the exposed API on the other end of the channel as if it were running in the same context.
 
-This package adds an OpenFin Inter-Application Bus endpoint to allow using ComLink but communicating via the OpenFin IAB rather than postMessage.
+![ComLink handles messaging between the front-end and web workers](./comlink.svg)
 
-There is a single exported function:
+[OpenFin](https://openfin.co/) builds on [Electron](https://www.electronjs.org/) and provides its own messaging channel (the Inter-Application Bus or IAB) that works between (and within) independent OpenFin applications allowing for cross-application integration and communication. It's a powerful mechanism that has the same problems as working with web workers - the need to manage transceiving messages between the applications.
+
+Given ComLink already provides a simple mechanism for abstracting messages so that we can just work with the remote API as if it was local, it would be great if the same idea could work via the OpenFin IAB. This package enables exactly that - it provides a ComLink-compatible endpoint that manages messages sent or received via the OpenFin Inter-Application Bus making exposing an API between different parts of an OpenFin application or between different OpenFin applications only a couple of lines of code.
+
+![ComLink-OpenFin handles messaging between OpenFin applications](./comlink-openfin.svg)
+
+Using the endpoint is straight-forward: there is a single exported function that constructs it:
 
 ```
 openfinEndpoint(topic: string, remote?: fin.Identity): Comlink.Endpoint
 ```
 
-| Parameter | Description                                                                                                                                       |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `topic`   | The IAB topic name to send/receive messages using                                                                                                 |
-| `remote`  | An optional OpenFin application uuid for the other end (sender or receiver). Sends as broadcast and accepts messages from any uuid if unspecified |
+- `topic`: The IAB topic name to send/receive messages using - this should be unique and follow OpenFin guidelines
+- `remote`: An optional OpenFin application uuid for the other end (sender or receiver) to enforce direct sender/receiver communication. If not specified, messages are broadcast to all topic listeners and received from any application on the same topic.
+
+The sample code snippets below shows exposing an API, callMe, from one OpenFin application followed by creating the local proxy and calling the API from a completely different OpenFin application. ComLink wraps up the request to call the function including parameters and transfers it, via the IAB, to the other application where it is run. The response is similarly wrapped up and sent back over the IAB to the requesting application.
+
+For those familiar with the existing Comlink API, the only change is the additional call to create the openfinEndpoint.
 
 ## The exposed API
 
