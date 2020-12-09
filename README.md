@@ -1,16 +1,16 @@
 # comlink-openfin
 
-ComLink (https://github.com/GoogleChromeLabs/comlink) is a great way to simplify interacting with web workers or iFrames which otherwise requiring managing messages via [postMessage](https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage). Using ComLink, a [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) object is created on one side of a [MessageChannel](https://developer.mozilla.org/en-US/docs/Web/API/MessageChannel) and allows interaction with an exposed API on the other end of the channel as if it were a local, asynchronous API.
+ComLink (https://github.com/GoogleChromeLabs/comlink) is a great way to simplify interacting with web workers or iFrames that otherwise require managing messages via [postMessage](https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage). Using ComLink, a [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) is created on one side of a [MessageChannel](https://developer.mozilla.org/en-US/docs/Web/API/MessageChannel) that can interact with an API on the other end of the channel as if it were a local, asynchronous API.
 
 ![ComLink handles messaging between the front-end and web workers](./comlink.svg)
 
-[OpenFin](https://openfin.co/) builds on [Electron](https://www.electronjs.org/) and provides its own messaging channel (the Inter-Application Bus or IAB) that works between (and within) OpenFin applications allowing for cross-application integration and communication. It's a powerful mechanism that has the same problems as working with web workers - the need to manage transceiving messages between the applications.
+[OpenFin](https://openfin.co/) builds on [Electron](https://www.electronjs.org/) and provides its own messaging channel (the Inter-Application Bus or IAB) that works between (and within) OpenFin applications allowing for cross-application integration and communication. It's a powerful mechanism with the same problems as web workers: the need to manage transceiving messages between the applications.
 
-Given ComLink already provides a simple mechanism for exposing an API over a message channel, it would be great if we could do the same thing but use the OpenFin IAB as the transport. This package does that by providing a ComLink-compatible endpoint to send and receive messages via the OpenFin IAB. Using the comlink-openfin endpoint makes integrating different OpenFin applications easier by enabling using an API exposed from one application directly within another in the same way as ComLink simplifies integrating a web front-end and web worker.
+As ComLink already provides a simple mechanism for exposing an API over a message channel, this package adds a ComLink-compatible endpoint to do the same message transceiving via the OpenFin IAB. Using the comlink-openfin endpoint makes integrating different OpenFin applications easier by making an API available in one application directly accessible from a different application.
 
 ![ComLink-OpenFin handles messaging between OpenFin applications](./comlink-openfin.svg)
 
-Using the endpoint is straight-forward as there is only a single exported function that constructs it:
+Using the endpoint requires using the single exported function to construct it:
 
 ```
 openfinEndpoint(topic: string, remote?: fin.Identity): Comlink.Endpoint
@@ -38,7 +38,7 @@ Comlink.expose(api, openfinEndpoint("Topic name"));
 
 ## The API client
 
-This snippet, in a separate OpenFin application creates a local proxy to access the other application's API. The common topic name allows the two applications (running on the same desktop environment) to communicate. As a result, the call to callMe (made async by ComLink) will send a message to the other application over the IAB and await the response, also returned via the IAB.
+This snippet, in a separate OpenFin application from above, creates the local proxy that will provide access to the other application's API. The common topic name allows the two applications (running on the same desktop) to communicate. As a result, the call to callMe (changed to async by ComLink) will automatically send a message from this application to the other application over the IAB and await the response, also returned via the IAB. The result is code like below - remote.callMe is called in this application but run in the other application.
 
 ```
 import * as Comlink from "comlink";
